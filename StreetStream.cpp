@@ -33,7 +33,7 @@ void StreetStream::startMonitor(){
 	while(true){
 		Mat videoFrame;  //kann in c++ auch ohne () direkt initialisiert werden!!
 		//Videoframe lesen
-		bool success = inputPath.read(streamFrame);
+		bool success = inputStream.read(streamFrame);
 		if(success == false){
 			break;
 		}
