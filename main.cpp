@@ -1,11 +1,12 @@
 #include <iostream>
+#include "StreetStream.h"
 using namespace std;
 
 int main(){
 	cout << "Hello World" << endl;
 	
-	// Test
-	//test2
-	//test3
+	StreetStream cam;
+	cam.setInputPath("0");
+	cam.startMonitor();
 	return 0;
 }
