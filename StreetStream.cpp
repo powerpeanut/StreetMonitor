@@ -17,27 +17,27 @@ void StreetStream::setInputPath(string path){
 	inputPath = path;
 }
 
-void StreetStream::showStreetMonitor(cv::Mat& streamFrame){
-	imshow("StreetMonitor", streamFrame);
-}
-
 void StreetStream::startMonitor(){
-	//Videodatei öffnen
-	//videoCapture.open(path);
-
-	//oder Kamera öffnen
-	//videoCapture.open(0); //keinen Pfad übergeben sondern nur das Device (0=Standarddevice)
-	inputStream.open(inputPath);
+	//Videodatei öffnen >> videoCapture.open(path);
+	//oder Kamera öffnen >> videoCapture.open(0);  ((keinen Pfad übergeben sondern nur das Device (0=Standarddevice)))
+	if(inputPath == "0")
+		inputStream.open(0);
+	else
+		inputStream.open(inputPath);
 
 	//Videoframes lesen
 	while(true){
-		Mat videoFrame;  //kann in c++ auch ohne () direkt initialisiert werden!!
+		Mat streamFrame;
 		//Videoframe lesen
 		bool success = inputStream.read(streamFrame);
 		if(success == false){
 			break;
 		}
-		showStreetMonitor(streamFrame);
-		//30 ms auf einen Tastendruck warten, bei Tastendruck beenden
+		imshow("StreetMonitor", streamFrame);
+
+		if(waitKey(30)){
+			break;
+		}
 	}
+	destroyAllWindows();
 }
