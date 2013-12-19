@@ -11,12 +11,14 @@ class Monitor{
 public:
 	Monitor(void);
 	~Monitor(void);
-	void process(std::string path);
+	void process(const std::string& path);
 	void detectMotion();
 
 private:
-	cv::Mat aktStreamFrame;
-	cv::Mat lastStreamFrame;
+	cv::Mat aktFrame;
+	cv::Mat lastFrame;
+	cv::Mat greyFrame;
+	cv::Mat binaryFrame;
 	StreetStream stream;
 };
 

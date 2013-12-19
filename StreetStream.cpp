@@ -7,29 +7,37 @@ using namespace cv;
 using namespace std;
 
 StreetStream::StreetStream(){
-	namedWindow("StreetMonitor");
+	
 }
 
 StreetStream::~StreetStream(){
 }
 
-void StreetStream::setInputPath(string path){
+void StreetStream::setInputPath(const string& path){
 	inputPath = path;
 }
 
 void StreetStream::startStream(){
 	//Videodatei öffnen >> videoCapture.open(path);
 	//oder Kamera öffnen >> videoCapture.open(0);  ((keinen Pfad übergeben sondern nur das Device (0=Standarddevice)))
-	if(inputPath == "0")
+	if(inputPath == "0"){
 		inputStream.open(0);
-	else
+	}
+	else{
 		inputStream.open(inputPath);
+	}
+	width = inputStream.get(CV_CAP_PROP_FRAME_WIDTH);
+	height = inputStream.get(CV_CAP_PROP_FRAME_HEIGHT);
 }
 
 VideoCapture StreetStream::getInputStream(){
 	return inputStream;
 }
 
-void StreetStream::showStream(Mat aktStreamFrame){
-	imshow("StreetMonitor", aktStreamFrame);
+int StreetStream::getWidth(){
+	return width;
+}
+
+int StreetStream::getHeight(){
+	return height;
 }
