@@ -15,6 +15,7 @@ public:
 private:
 	std::string inputPath; // als kompletter Pfad: "C:\\blabla\\pfad.avi" -- doppelbackslash oder 0 für Kamera (Device (0=Standarddevice))
 	cv::VideoCapture inputStream;
+	cv::Mat streamFrame;
 };
 
 #endif

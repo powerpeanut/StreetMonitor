@@ -26,18 +26,15 @@ void StreetStream::startMonitor(){
 		inputStream.open(inputPath);
 
 	//Videoframes lesen
-	while(true){
-		Mat streamFrame;
-		//Videoframe lesen
+	while(waitKey(30) == -1){
+		//Mat streamFrame;
+		//Videoframes lesen
 		bool success = inputStream.read(streamFrame);
 		if(success == false){
 			break;
 		}
 		imshow("StreetMonitor", streamFrame);
-
-		if(waitKey(30)){
-			break;
-		}
 	}
 	destroyAllWindows();
 }
+
