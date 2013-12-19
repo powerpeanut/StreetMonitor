@@ -10,7 +10,9 @@ public:
 	StreetStream(void);
 	~StreetStream(void);
 	void setInputPath(std::string path);
-	void startMonitor();
+	void startStream();
+	cv::VideoCapture getInputStream();
+	void StreetStream::showStream(cv::Mat streamFrame);
 
 private:
 	std::string inputPath; // als kompletter Pfad: "C:\\blabla\\pfad.avi" -- doppelbackslash oder 0 für Kamera (Device (0=Standarddevice))

@@ -2,17 +2,16 @@
 #include <opencv2\opencv.hpp>
 #include <string>
 
-#include "StreetStream.h"
+#include "Monitor.h"
 
 using namespace cv;
 using namespace std;
 
 int main(){
-	cout << "Hello World" << endl;
-	
-	StreetStream cam;
-	cam.setInputPath("0"); // 0=Kamera - Pfad für Videodatei
-	cam.startMonitor();
+	cout << "Street Stream Start\n" << endl;
+
+	Monitor mon;
+	mon.openStream("0"); // 0=Kamera - Pfad für Videodatei
 
 	return 0;
 }
