@@ -11,7 +11,8 @@ class Monitor{
 public:
 	Monitor(void);
 	~Monitor(void);
-	void openStream(std::string path);
+	void process(std::string path);
+	void detectMotion();
 
 private:
 	cv::Mat aktStreamFrame;

@@ -13,12 +13,13 @@ Monitor::Monitor(){
 Monitor::~Monitor(){
 }
 
-void Monitor::openStream(string path){
+void Monitor::process(string path){
 	stream.setInputPath(path);
 	stream.startStream();
 
 	//Frames lesen, ausgeben, lastFrame sichern
 	while(waitKey(30) == -1){
+		lastStreamFrame = aktStreamFrame;
 		//Videoframes lesen
 		bool success = stream.getInputStream().read(aktStreamFrame);
 		if(success == false){
@@ -26,9 +27,12 @@ void Monitor::openStream(string path){
 		}
 		stream.showStream(aktStreamFrame);
 
-		//some code here um frames zu vergleichen und Bewegung zu erkennen
+		detectMotion();
 
-		lastStreamFrame = aktStreamFrame;
 	}
 	destroyAllWindows();
+}
+
+void Monitor::detectMotion(){
+	//some code here um frames zu vergleichen und Bewegung zu erkennen
 }
