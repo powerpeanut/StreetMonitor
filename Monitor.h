@@ -17,8 +17,8 @@ public:
 private:
 	cv::Mat aktFrame;
 	cv::Mat firstFrame;
-	cv::Mat greyFrame;
 	cv::Mat binaryFrame;
+	cv::Mat outputFrame;
 	StreetStream stream;
 };
 

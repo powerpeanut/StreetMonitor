@@ -12,6 +12,7 @@ int main(){
 
 	Monitor mon;
 	mon.process("0"); // 0=Kamera - Pfad für Videodatei
+	//mon.process("Micro-dance.avi");
 
 	return 0;
 }
