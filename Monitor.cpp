@@ -35,7 +35,7 @@ void Monitor::process(const string& path){
 	//Gaussian Background/Foreground Segmentation vorbereiten
 	bgSub.set("nmixtures",3);			//set number of gaussian mixtures
 	bgSub.set("detectShadows",false);	//turn the shadow detection off
-	
+
 
 	//#################################################################################
 	//Streams und Berechnungen laufen lassen
@@ -88,8 +88,8 @@ void Monitor::detectMotion(){
 	contoursPoly.resize(contours.size());
 	boundRect.resize(contours.size());
 	for(int i=0; i < contours.size(); i++){
-			approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
-			boundRect[i] = boundingRect(Mat(contoursPoly[i]));
+		approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
+		boundRect[i] = boundingRect(Mat(contoursPoly[i]));
 	}
 
 	//Input in Ausgabe Stream kopieren und erkannte Konturen hinzufügen
@@ -97,15 +97,19 @@ void Monitor::detectMotion(){
 	Scalar color = Scalar(0,0,255);
 	objCount = 0;
 	for(int i=0; i < boundRect.size(); i++){
-		if(boundRect[i].size().width > 100 && boundRect[i].size().height > 50){					//Zeichnet nur Objekte die breiter 60px / höher 50px  sind (z.B. Autos + LKW) >> ConfigMode? 
+		if(boundRect[i].size().width > 90 && boundRect[i].size().height > 50){					//Zeichnet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> ConfigMode? 
 			//Scalar color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));	//random Farbe für Kontur
 			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());		//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
 			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);				//zeichnet Rechteck um Kontur
 			objCount++;
+
+			//Fahrzeug Beschriftung (Nummer)
+			Point center = Point(boundRect[i].x + (boundRect[i].width / 2), boundRect[i].y + (boundRect[i].height / 2));
+			putText(outputFrame,intToString(objCount),center,FONT_HERSHEY_PLAIN,2.0,Scalar(0,0,255),2,8,false);
 		}
 	}
 	
-	//Anzeige für aktuell Anzahl erkannter Fahrzeuge
+	//Anzeige für aktuelle Anzahl erkannter Fahrzeuge
 	putText(outputFrame,intToString(objCount),Point(outputFrame.cols-45,50),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);
 }
 

@@ -17,8 +17,8 @@ int main(){
 	//mon.process("StreetNils.mp4");
 
 	//## Kamera am besten senkrecht zur Straﬂe ausrichten
-	mon.process("Bochum1.avi"); //http://www.youtube.com/watch?v=Jc22qUyuN7k
-	//mon.process("Bochum2.avi"); //http://www.youtube.com/watch?v=ZD1zeSSJZ7k
+	//mon.process("Bochum1.avi"); //http://www.youtube.com/watch?v=Jc22qUyuN7k
+	mon.process("Bochum2.avi"); //http://www.youtube.com/watch?v=ZD1zeSSJZ7k
 
 	return 0;
 }
