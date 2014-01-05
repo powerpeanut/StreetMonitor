@@ -26,8 +26,10 @@ private:
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<std::vector<cv::Point> > contoursPoly;
 	std::vector<cv::Rect> boundRect;
+	int countCont, objCount;
 
 	void detectMotion();				//Motion Detection
+	std::string intToString(int x);		//int to String
 };
 
 #endif

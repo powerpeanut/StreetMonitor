@@ -13,7 +13,7 @@ Monitor::~Monitor(){
 //verarbeitet InputStream + Ausgabe
 void Monitor::process(const string& path){
 
-	bool flip = true; //wenn Kamera "über Kopf" gedreht >> später ins Config Menü!?
+	bool flip = false; //wenn Kamera "über Kopf" gedreht >> später ins Config Menü!?
 
 	//*********************************************************************************
 	//Original Stream
@@ -53,8 +53,9 @@ void Monitor::process(const string& path){
 		imshow("Input Stream", aktFrame);
 
 		//*****************************************************************************
-		//Objekterkennung und Hervorbebung
+		//Objekterkennung, Hervorbebung und Zählung
 		detectMotion();
+		cout << "Autos: " << objCount << " || Konturen: " << countCont << endl;
 		
 		//*****************************************************************************
 		//Anzeige der Frames	
@@ -66,7 +67,7 @@ void Monitor::process(const string& path){
 
 
 //#####################################################################################
-//Motion Detection
+//Motion Detection + Zählung
 void Monitor::detectMotion(){
 	
 	RNG rng(12345);		//random Number für Farbe der Konturen
@@ -81,20 +82,38 @@ void Monitor::detectMotion(){
 	erode(fgMask,fgMask,Mat());
     dilate(fgMask,fgMask,Mat());
     findContours(fgMask,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);	//CV_RETR_EXTERNAL >> retrieve only extreme outer contours || CV_CHAIN_APPROX_NONE >> detect all pixels of each contour
-																																		// || CV_CHAIN_APPROX_SIMPLE >> compress contours and leaves only contours end points
+	countCont = contours.size();																									// || CV_CHAIN_APPROX_SIMPLE >> compress contours and leaves only contours end points
+	
 	//gefundene Konturen annähernd in Polygone umwandeln und Grenzen als Rechtecke sichern
 	contoursPoly.resize(contours.size());
 	boundRect.resize(contours.size());
 	for(int i=0; i < contours.size(); i++){
-		approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
-		boundRect[i] = boundingRect(Mat(contoursPoly[i]));
+			approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
+			boundRect[i] = boundingRect(Mat(contoursPoly[i]));
 	}
 
 	//Input in Ausgabe Stream kopieren und erkannte Konturen hinzufügen
 	aktFrame.copyTo(outputFrame);
-	for(int i=0; i < contours.size(); i++){
-		Scalar color = Scalar(rng.uniform(0, 255),rng.uniform(0,255),rng.uniform(0,255));	//random Farbe für Kontur
-		//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());		//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
-		rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);				//zeichnet Rechteck um Kontur
+	Scalar color = Scalar(0,0,255);
+	objCount = 0;
+	for(int i=0; i < boundRect.size(); i++){
+		if(boundRect[i].size().width > 100 && boundRect[i].size().height > 50){					//Zeichnet nur Objekte die breiter 60px / höher 50px  sind (z.B. Autos + LKW) >> ConfigMode? 
+			//Scalar color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));	//random Farbe für Kontur
+			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());		//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
+			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);				//zeichnet Rechteck um Kontur
+			objCount++;
+		}
 	}
+	
+	//Anzeige für aktuell Anzahl erkannter Fahrzeuge
+	putText(outputFrame,intToString(objCount),Point(outputFrame.cols-45,50),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);
+}
+
+//#####################################################################################
+//Wandelt int in String um
+std::string Monitor::intToString(int x){
+	stringstream ss;
+	ss << x; 
+	string str = ss.str();	
+	return str;
 }
