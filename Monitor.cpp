@@ -34,6 +34,10 @@ void Monitor::process(const string& path){
 	bgSub.set("nmixtures",3);			//set number of gaussian mixtures
 	bgSub.set("detectShadows",false);	//turn the shadow detection off
 
+	//*********************************************************************************
+	//Konturenerkennung vorbereiten
+	RNG rng(12345);						//random Number für Farbe der Konturen
+	
 
 	//#################################################################################
 	//Streams und Berechnungen laufen lassen
@@ -56,14 +60,26 @@ void Monitor::process(const string& path){
         bgSub.getBackgroundImage(bgFrame);	//gibt HintergrundFrame zurück
 
 		//*****************************************************************************
-		//Vodergrundbild bearbeiten und Umrisse erkennen
+		//Vodergrundbild bearbeiten und Konturen der Bewegung erkennen und einrahmen
 		erode(fgMask,fgMask,Mat());
         dilate(fgMask,fgMask,Mat());
-        findContours(fgMask,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);	//CV_RETR_EXTERNAL >> retrieve only external contours || CV_CHAIN_APPROX_NONE >> detect all pixels of each contour
+        findContours(fgMask,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);	//CV_RETR_EXTERNAL >> retrieve only extreme outer contours || CV_CHAIN_APPROX_NONE >> detect all pixels of each contour
+																																		// || CV_CHAIN_APPROX_SIMPLE >> compress contours and leaves only contours end points
+		//gefundene Konturen annähernd in Polygone umwandeln und Grenzen als Rechtecke sichern
+		contoursPoly.resize(contours.size());
+		boundRect.resize(contours.size());
+		for(int i=0; i < contours.size(); i++){
+			approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
+			boundRect[i] = boundingRect(Mat(contoursPoly[i]));
+		}
 
-		//Background in Ausgabe Stream kopieren und Konturen hinzufügen
-        aktFrame.copyTo(outputFrame);
-        drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
+		//Input in Ausgabe Stream kopieren und erkannte Konturen hinzufügen
+		aktFrame.copyTo(outputFrame);
+		for(int i=0; i < contours.size(); i++){
+			Scalar color = Scalar(rng.uniform(0, 255),rng.uniform(0,255),rng.uniform(0,255));	//random Farbe für Kontur
+			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());		//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
+			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);				//zeichnet Rechteck um Kontur
+		}
 		
 		//*****************************************************************************
 		//Anzeige der Frames	
