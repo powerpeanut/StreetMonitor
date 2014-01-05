@@ -12,8 +12,7 @@ class Monitor{
 public:
 	Monitor(void);
 	~Monitor(void);
-	void process(const std::string& path);
-	void detectMotion();
+	void process(const std::string& path);	//verarbeitet InputStream + Ausgabe
 
 private:
 	StreetStream stream;				//reiner InputStream
@@ -27,6 +26,8 @@ private:
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<std::vector<cv::Point> > contoursPoly;
 	std::vector<cv::Rect> boundRect;
+
+	void detectMotion();				//Motion Detection
 };
 
 #endif
