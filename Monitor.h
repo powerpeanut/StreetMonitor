@@ -3,6 +3,7 @@
 
 #include <opencv2\opencv.hpp>
 #include <string>
+#include <vector>
 
 #include "StreetStream.h"
 
@@ -15,11 +16,15 @@ public:
 	void detectMotion();
 
 private:
-	cv::Mat aktFrame;
-	cv::Mat firstFrame;
-	cv::Mat binaryFrame;
-	cv::Mat outputFrame;
-	StreetStream stream;
+	StreetStream stream;				//reiner InputStream
+	cv::Mat aktFrame;					//reiner InputFrame
+	cv::Mat bgFrame;					//errechneter HintergrundFrame
+	cv::Mat fgMask;						//Vodergrund Maske
+	cv::Mat outputFrame;				//verarbeitetes AusgabeFrame
+    cv::BackgroundSubtractorMOG2 bgSub; //Gaussian Mixture-based Background/Foreground Segmentation Algorithm in openCV
+
+	//Vektor mit Vektoren von Points für Konturen der erkannten Objekte >> Eine Kontur = Vektor der Punkte; mehrere = Vektor mit Vektoren der Punkte (quasi Array)
+	std::vector<std::vector<cv::Point> > contours;	
 };
 
 #endif
