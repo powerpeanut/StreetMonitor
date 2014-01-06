@@ -48,7 +48,7 @@ void Monitor::process(const string& path){
 	namedWindow("Konfigurator");
 	resizeWindow("Konfigurator",250,220);
 	createTrackbar("InputFlip","Konfigurator",&configFlip,1);		//flip InputStream
-	createTrackbar("InputStream","Konfigurator",&confInputStream,1);
+	createTrackbar("Input","Konfigurator",&confInputStream,1);
 	createTrackbar("Background","Konfigurator",&confBackground,1);
 	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
 	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
@@ -62,7 +62,7 @@ void Monitor::process(const string& path){
 		configFlip = getTrackbarPos("InputFlip","Konfigurator");
 		confCarWidth = getTrackbarPos("CarWidth","Konfigurator");
 		confCarHeight = getTrackbarPos("CarHeight","Konfigurator");
-		confInputStream = getTrackbarPos("InputStream","Konfigurator");	if(confInputStream == 0) destroyWindow("Input Stream");
+		confInputStream = getTrackbarPos("Input","Konfigurator");	if(confInputStream == 0) destroyWindow("Input Stream");
 		confBackground = getTrackbarPos("Background","Konfigurator");	if(confBackground == 0) destroyWindow("Background");
 
 		//*****************************************************************************
@@ -89,12 +89,15 @@ void Monitor::process(const string& path){
 	destroyAllWindows();
 }
 
-
 //#####################################################################################
 //Motion Detection + Zählung
 void Monitor::detectMotion(){
 	
 	RNG rng(12345);		//random Number für Farbe der Konturen
+
+	//*********************************************************************************
+	//Canny Edge Detection TEST MODE
+	//CannyThreshold(0, 0);
 	
 	//*********************************************************************************
 	//Gaussian Background/Foreground Segmentation Berechnungen
@@ -116,6 +119,12 @@ void Monitor::detectMotion(){
 		boundRect[i] = boundingRect(Mat(contoursPoly[i]));
 	}
 
+//////////////
+vector<Mat> actCar;//(200,200,CV_8UC3, Scalar(0,255,0));
+actCar.resize(contours.size());
+string carNum;
+//////////////
+
 	//Input in Ausgabe Stream kopieren und erkannte Konturen hinzufügen
 	aktFrame.copyTo(outputFrame);
 	Scalar color = Scalar(0,0,255);
@@ -130,11 +139,18 @@ void Monitor::detectMotion(){
 			//Fahrzeug Beschriftung (Nummer)
 			Point center = Point(boundRect[i].x + (boundRect[i].width / 2), boundRect[i].y + (boundRect[i].height / 2));
 			putText(outputFrame,intToString(objCount),center,FONT_HERSHEY_PLAIN,2.0,Scalar(0,0,255),2,8,false);
+
+		////HIER SOME CODE FÜR NEUES CAR OBJECT erzeugen und standbild übergeben für weitere detection und ausgabe!!! >> Template Matching
+				aktFrame(boundRect[i]).copyTo(actCar[i]);
+				carNum = intToString(objCount);
+				imshow(carNum, actCar[i]);
+		////////////////
 		}
 	}
 	
 	//Anzeige für aktuelle Anzahl erkannter Fahrzeuge
 	putText(outputFrame,intToString(objCount),Point(outputFrame.cols-45,50),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);
+
 }
 
 //#####################################################################################
@@ -145,3 +161,29 @@ std::string Monitor::intToString(int x){
 	string str = ss.str();	
 	return str;
 }
+
+//#####################################################################################
+//Candy Edge Detector  TEST MODE - erkennt Umrisse
+//http://docs.opencv.org/doc/tutorials/imgproc/imgtrans/canny_detector/canny_detector.html
+void Monitor::CannyThreshold(int, void*){
+	Mat src_gray, detected_edges, out;
+	int edgeThresh = 1;
+	int lowThreshold = 60;
+	int ratio = 3;
+	int kernel_size = 3;
+
+	/// akt. Frame in Graustufenbild umwandeln
+	cvtColor(aktFrame, src_gray, CV_BGR2GRAY);
+
+	/// Reduce noise with a kernel 3x3
+	blur(src_gray, detected_edges, Size(3,3));
+	
+	/// Canny detector
+	Canny(detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size);
+	
+	/// Using Canny's output as a mask, we display our result
+	out = Scalar::all(0);
+	
+	aktFrame.copyTo(out, detected_edges);
+	imshow("Canny", out);
+ }
