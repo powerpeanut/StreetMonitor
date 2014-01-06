@@ -33,6 +33,7 @@ private:
 
 	int configFlip;						//für Bilddrehung (0 aus, 1 ein)
 	int confCarWidth, confCarHeight;	//zu erkennende Fahrzeugbreite und -höhe
+	int confInputStream, confBackground;//MatObjekte de/aktivieren
 };
 
 #endif

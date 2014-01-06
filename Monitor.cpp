@@ -19,6 +19,8 @@ void Monitor::process(const string& path){
 	else				configFlip = 0;
 	confCarWidth = 90;
 	confCarHeight= 50;
+	confInputStream = 1;
+	confBackground = 1;
 	
 	//*********************************************************************************
 	//Original Stream
@@ -44,8 +46,10 @@ void Monitor::process(const string& path){
 	//*********************************************************************************
 	//Config Menü erstellen
 	namedWindow("Konfigurator");
-	resizeWindow("Konfigurator",250,120);
+	resizeWindow("Konfigurator",250,220);
 	createTrackbar("InputFlip","Konfigurator",&configFlip,1);		//flip InputStream
+	createTrackbar("InputStream","Konfigurator",&confInputStream,1);
+	createTrackbar("Background","Konfigurator",&confBackground,1);
 	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
 	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
 
@@ -58,9 +62,11 @@ void Monitor::process(const string& path){
 		configFlip = getTrackbarPos("InputFlip","Konfigurator");
 		confCarWidth = getTrackbarPos("CarWidth","Konfigurator");
 		confCarHeight = getTrackbarPos("CarHeight","Konfigurator");
+		confInputStream = getTrackbarPos("InputStream","Konfigurator");	if(confInputStream == 0) destroyWindow("Input Stream");
+		confBackground = getTrackbarPos("Background","Konfigurator");	if(confBackground == 0) destroyWindow("Background");
 
 		//*****************************************************************************
-		//Original Stream holen und anzeigen
+		//Original Stream holen
 		if(stream.getInputStream().read(aktFrame) == false){
 			break;
 		}
@@ -68,7 +74,6 @@ void Monitor::process(const string& path){
 		if(configFlip == 1){
 			flip(aktFrame,aktFrame,-1);
 		}
-		imshow("Input Stream", aktFrame);
 
 		//*****************************************************************************
 		//Objekterkennung, Hervorbebung und Zählung
@@ -76,8 +81,9 @@ void Monitor::process(const string& path){
 		cout << "Autos: " << objCount << " || Konturen: " << countCont << endl;
 		
 		//*****************************************************************************
-		//Anzeige der Frames	
-		imshow("Background", bgFrame);
+		//Anzeige der Frames
+		if(confInputStream == 1) imshow("Input Stream", aktFrame);
+		if(confBackground == 1)	imshow("Background", bgFrame);
 		imshow("Street Monitor", outputFrame);
 	}
 	destroyAllWindows();

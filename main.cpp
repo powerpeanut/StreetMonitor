@@ -14,7 +14,7 @@ void getSource();
 int main(){
 	Monitor mon;
 
-	cout << "Street Stream Start\n" << endl;
+	cout << "######################## Street Stream ########################\n" << endl;
 
 	//Quelle wählen
 	getSource();
