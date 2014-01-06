@@ -30,6 +30,9 @@ private:
 
 	void detectMotion();				//Motion Detection
 	std::string intToString(int x);		//int to String
+
+	int configFlip;						//für Bilddrehung (0 aus, 1 ein)
+	int confCarWidth, confCarHeight;	//zu erkennende Fahrzeugbreite und -höhe
 };
 
 #endif

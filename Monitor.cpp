@@ -13,8 +13,13 @@ Monitor::~Monitor(){
 //verarbeitet InputStream + Ausgabe
 void Monitor::process(const string& path){
 
-	bool flip = false; //wenn Kamera "über Kopf" gedreht >> später ins Config Menü!?
-
+	//*********************************************************************************
+	//Standard Werte voreinstellen
+	if(path == "0")		configFlip = 1;		//Webcam Stream wird "über Kopf" gedreht
+	else				configFlip = 0;
+	confCarWidth = 90;
+	confCarHeight= 50;
+	
 	//*********************************************************************************
 	//Original Stream
 	namedWindow("Input Stream");
@@ -36,19 +41,32 @@ void Monitor::process(const string& path){
 	bgSub.set("nmixtures",3);			//set number of gaussian mixtures
 	bgSub.set("detectShadows",false);	//turn the shadow detection off
 
+	//*********************************************************************************
+	//Config Menü erstellen
+	namedWindow("Konfigurator");
+	resizeWindow("Konfigurator",250,120);
+	createTrackbar("InputFlip","Konfigurator",&configFlip,1);		//flip InputStream
+	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
+	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
 
 	//#################################################################################
 	//Streams und Berechnungen laufen lassen
 	while(waitKey(30) == -1){
 
 		//*****************************************************************************
+		//Trackbars aus Config Menü auslesen
+		configFlip = getTrackbarPos("InputFlip","Konfigurator");
+		confCarWidth = getTrackbarPos("CarWidth","Konfigurator");
+		confCarHeight = getTrackbarPos("CarHeight","Konfigurator");
+
+		//*****************************************************************************
 		//Original Stream holen und anzeigen
 		if(stream.getInputStream().read(aktFrame) == false){
 			break;
 		}
-		//Bilddrehung um 180° wenn Kamera "über Kopf" hängt
-		if(flip){
-			cv::flip(aktFrame,aktFrame,-1);
+		//Bilddrehung um 180° wenn Kamera "über Kopf" hängt >> über Slider änderbar
+		if(configFlip == 1){
+			flip(aktFrame,aktFrame,-1);
 		}
 		imshow("Input Stream", aktFrame);
 
@@ -97,10 +115,10 @@ void Monitor::detectMotion(){
 	Scalar color = Scalar(0,0,255);
 	objCount = 0;
 	for(int i=0; i < boundRect.size(); i++){
-		if(boundRect[i].size().width > 90 && boundRect[i].size().height > 50){					//Zeichnet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> ConfigMode? 
-			//Scalar color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));	//random Farbe für Kontur
-			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());		//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
-			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);				//zeichnet Rechteck um Kontur
+		if(boundRect[i].size().width > confCarWidth && boundRect[i].size().height > confCarHeight){		//Zeichnet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> über Slider änderbar
+			//Scalar color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));			//random Farbe für Kontur
+			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());				//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
+			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);						//zeichnet Rechteck um Kontur
 			objCount++;
 
 			//Fahrzeug Beschriftung (Nummer)
