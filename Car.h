@@ -7,11 +7,19 @@
 class Car{
 
 public:
-	Car(cv::Mat face);
+	Car();
+	Car(cv::Mat startFace, cv::Point center, int number);
 	~Car(void);
+	void updateCenter(cv::Point center);
+	void updateFace(cv::Mat face);
+	cv::Point getCenter();
+	cv::Mat getFace();
+	int getNumber();
 
 private:
-	cv::Mat face;
+	cv::Mat face;						//Ansicht
+	cv::Point center;					//Centroid
+	int number;
 
 };
 

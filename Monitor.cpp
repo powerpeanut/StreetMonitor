@@ -15,6 +15,8 @@ void Monitor::process(const string& path){
 
 	//*********************************************************************************
 	//Standard Werte voreinstellen
+	frameCount = 0;
+	globalCarCount = 0;
 	if(path == "0")		configFlip = 1;		//Webcam Stream wird "über Kopf" gedreht
 	else				configFlip = 0;
 	confCarWidth = 90;
@@ -70,6 +72,8 @@ void Monitor::process(const string& path){
 		if(stream.getInputStream().read(aktFrame) == false){
 			break;
 		}
+		frameCount++;
+
 		//Bilddrehung um 180° wenn Kamera "über Kopf" hängt >> über Slider änderbar
 		if(configFlip == 1){
 			flip(aktFrame,aktFrame,-1);
@@ -78,7 +82,7 @@ void Monitor::process(const string& path){
 		//*****************************************************************************
 		//Objekterkennung, Hervorbebung und Zählung
 		detectMotion();
-		cout << "Autos: " << objCount << " || Konturen: " << countCont << endl;
+		cout << "Autos: " << objCount << " || Konturen: " << contCount << endl;
 		
 		//*****************************************************************************
 		//Anzeige der Frames
@@ -93,7 +97,7 @@ void Monitor::process(const string& path){
 //Motion Detection + Zählung
 void Monitor::detectMotion(){
 	
-	RNG rng(12345);		//random Number für Farbe der Konturen
+	//RNG rnd(12345);		//random Number für Farbe der Konturen
 
 	//*********************************************************************************
 	//Canny Edge Detection TEST MODE
@@ -109,47 +113,89 @@ void Monitor::detectMotion(){
 	erode(fgMask,fgMask,Mat());
     dilate(fgMask,fgMask,Mat());
     findContours(fgMask,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);	//CV_RETR_EXTERNAL >> retrieve only extreme outer contours || CV_CHAIN_APPROX_NONE >> detect all pixels of each contour
-	countCont = contours.size();																									// || CV_CHAIN_APPROX_SIMPLE >> compress contours and leaves only contours end points
+	contCount = contours.size();			//Anzahl aller erkannten Objekte														// || CV_CHAIN_APPROX_SIMPLE >> compress contours and leaves only contours end points
 	
-	//gefundene Konturen annähernd in Polygone umwandeln und Grenzen als Rechtecke sichern
+	//Arrays an Anzahl gefundener Objekte anpassen (damit i für alle einheitlich ist)
 	contoursPoly.resize(contours.size());
 	boundRect.resize(contours.size());
+
+	//gefundene Konturen annähernd in Polygone umwandeln und Grenzen als Rechtecke sichern
 	for(int i=0; i < contours.size(); i++){
 		approxPolyDP(Mat(contours[i]),contoursPoly[i],3,true);
 		boundRect[i] = boundingRect(Mat(contoursPoly[i]));
 	}
 
-//////////////
-vector<Mat> actCar;//(200,200,CV_8UC3, Scalar(0,255,0));
-actCar.resize(contours.size());
-string carNum;
-//////////////
-
+	//*********************************************************************************
 	//Input in Ausgabe Stream kopieren und erkannte Konturen hinzufügen
 	aktFrame.copyTo(outputFrame);
-	Scalar color = Scalar(0,0,255);
-	objCount = 0;
+	Scalar color = Scalar(0,0,255);																		//Farbe der Objekt-Markierung und Schrift
+	objCount = 0;																						//Anzahl der erkannten Fahrzeug-Objekte
+
+	bool work = false;
+
+	//Objekte als Fahrzeuge erkennen, zeichnen und zählen
 	for(int i=0; i < boundRect.size(); i++){
-		if(boundRect[i].size().width > confCarWidth && boundRect[i].size().height > confCarHeight){		//Zeichnet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> über Slider änderbar
-			//Scalar color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));			//random Farbe für Kontur
+		//verarbeitet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> über Slider einstellbar!
+		if(boundRect[i].size().width > confCarWidth && boundRect[i].size().height > confCarHeight){	
+			work = true;
+
+			//Scalar color = Scalar(rnd.uniform(0,255),rnd.uniform(0,255),rnd.uniform(0,255));			//random Farbe für Kontur
 			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());				//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
 			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);						//zeichnet Rechteck um Kontur
 			objCount++;
 
-			//Fahrzeug Beschriftung (Nummer)
+			//Centroid Bestimmung des aktuellen Objekts und Fahrzeug Beschriftung (Nummer)
 			Point center = Point(boundRect[i].x + (boundRect[i].width / 2), boundRect[i].y + (boundRect[i].height / 2));
 			putText(outputFrame,intToString(objCount),center,FONT_HERSHEY_PLAIN,2.0,Scalar(0,0,255),2,8,false);
 
-		////HIER SOME CODE FÜR NEUES CAR OBJECT erzeugen und standbild übergeben für weitere detection und ausgabe!!! >> Template Matching
-				aktFrame(boundRect[i]).copyTo(actCar[i]);
-				carNum = intToString(objCount);
-				imshow(carNum, actCar[i]);
-		////////////////
+			//sichtbaren Ausschnitt für aktuell erkanntes Fahrzeug erzeugen
+			Mat viewCar;
+			aktFrame(boundRect[i]).copyTo(viewCar);
+
+			//Car Objekt erzeugen für neu erkanntes Fahrzeug
+			Car newCar = Car(viewCar,center,globalCarCount+1);
+
+			//Car Objekte vergleichen und Neues erst in Liste anlegen, wenn es noch nicht vorhanden ist					>> eigene Funktion auslagern?!??!
+			if(frameCount < 2){								//ersten Frames müssen noch initialisieren, erst dann wird gezählt
+				globalCarCount = 0;							//da erstes Objekt meist das gesamte erste Frame! (Bug..haha)
+			}
+			else{
+				bool found = false;
+				for(int c=0; c < cars.size(); c++){
+					cout << "aktuell erfasste Fahrzeuge:" << cars.size() << endl;
+					//wenn centroid des gefundenen Fahrzeugs nahe (range = 50) eines vorhandenen Fahrzeugs aus der Liste liegt, ist es wohl dasselbe Fahrzeug ?!
+					//RANGE über SLIDER DEFINIEREN ??? >> config
+					if(newCar.getCenter().x > cars[c].getCenter().x-50 && newCar.getCenter().x < cars[c].getCenter().x+50
+							&& newCar.getCenter().y > cars[c].getCenter().y-50 && newCar.getCenter().y < cars[c].getCenter().y+50){
+						found = true;
+						cout << "sameCarNr: " << cars[c].getNumber() << endl;
+						cars[c].updateCenter(center);
+						cars[c].updateFace(viewCar);
+						imshow(intToString(objCount), cars[c].getFace());			//aktuelles Fahrzeug in eigenem Fenster anzeigen
+					}
+				}
+				//kein bekanntes Fahrzeug im aktuellen Frame gefunden, Fahrzeug muss also neu sein
+				if(found == false){
+					cars.push_back(newCar);
+					globalCarCount++;
+					cout << "newCarNr: " << newCar.getNumber() << endl;
+				}
+			}
+			newCar.~Car();
 		}
 	}
+
+	//Objekte und Car-Fenster löschen, wenn aktuell kein Fahrzeug erkannt wird
+	if(work == false){
+		for(int c=0; c <= cars.size(); c++){
+			destroyWindow(intToString(c));
+		}
+		cars.clear();
+	}
 	
-	//Anzeige für aktuelle Anzahl erkannter Fahrzeuge
-	putText(outputFrame,intToString(objCount),Point(outputFrame.cols-45,50),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);
+	//Anzeige der aktuellen Anzahl erkannter Fahrzeuge und Gesamtfahrzeuge (links oben im Street Monitor Fenster)
+	putText(outputFrame,intToString(objCount),Point(5,50),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);				//Point(outputFrame.cols-45,50) rechts oben, Text ist aber linksbündig, bei größeren Zahlen schwierig... :(
+	putText(outputFrame,intToString(globalCarCount),Point(5,100),FONT_HERSHEY_PLAIN,4.0,Scalar(0,0,255),2,8,false);
 
 }
 
