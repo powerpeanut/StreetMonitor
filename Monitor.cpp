@@ -131,9 +131,8 @@ void Monitor::detectMotion(){
 	Scalar color = Scalar(0,0,255);																		//Farbe der Objekt-Markierung und Schrift
 	objCount = 0;																						//Anzahl der erkannten Fahrzeug-Objekte
 
-	bool work = false;
-
 	//Objekte als Fahrzeuge erkennen, zeichnen und zählen
+	bool work = false;
 	for(int i=0; i < boundRect.size(); i++){
 		//verarbeitet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> über Slider einstellbar!
 		if(boundRect[i].size().width > confCarWidth && boundRect[i].size().height > confCarHeight){	
@@ -155,6 +154,7 @@ void Monitor::detectMotion(){
 			//Car Objekt erzeugen für neu erkanntes Fahrzeug
 			Car newCar = Car(viewCar,center,globalCarCount+1);
 
+			//*********************************************************************************
 			//Car Objekte vergleichen und Neues erst in Liste anlegen, wenn es noch nicht vorhanden ist					>> eigene Funktion auslagern?!??!
 			if(frameCount < 2){								//ersten Frames müssen noch initialisieren, erst dann wird gezählt
 				globalCarCount = 0;							//da erstes Objekt meist das gesamte erste Frame! (Bug..haha)
@@ -162,11 +162,12 @@ void Monitor::detectMotion(){
 			else{
 				bool found = false;
 				for(int c=0; c < cars.size(); c++){
-					cout << "aktuell erfasste Fahrzeuge:" << cars.size() << endl;
-					//wenn centroid des gefundenen Fahrzeugs nahe (range = 50) eines vorhandenen Fahrzeugs aus der Liste liegt, ist es wohl dasselbe Fahrzeug ?!
-					//RANGE über SLIDER DEFINIEREN ??? >> config
-					if(newCar.getCenter().x > cars[c].getCenter().x-50 && newCar.getCenter().x < cars[c].getCenter().x+50
-							&& newCar.getCenter().y > cars[c].getCenter().y-50 && newCar.getCenter().y < cars[c].getCenter().y+50){
+					//cout << "aktuell erfasste Fahrzeuge:" << cars.size() << endl;
+					
+					//Wenn centroid des gefundenen Fahrzeugs nahe (range) eines vorhandenen Fahrzeugs aus der Liste liegt, ist es wohl dasselbe Fahrzeug ?!
+					//range = Centroid innerhalb halber Breite und Höhe der Erkennungsrange
+					if(newCar.getCenter().x > cars[c].getCenter().x-(confCarWidth/2) && newCar.getCenter().x < cars[c].getCenter().x+(confCarWidth/2)
+							&& newCar.getCenter().y > cars[c].getCenter().y-(confCarHeight/2) && newCar.getCenter().y < cars[c].getCenter().y+(confCarHeight/2)){
 						found = true;
 						cout << "sameCarNr: " << cars[c].getNumber() << endl;
 						cars[c].updateCenter(center);
@@ -185,6 +186,7 @@ void Monitor::detectMotion(){
 		}
 	}
 
+	//*********************************************************************************
 	//Objekte und Car-Fenster löschen, wenn aktuell kein Fahrzeug erkannt wird
 	if(work == false){
 		for(int c=0; c <= cars.size(); c++){

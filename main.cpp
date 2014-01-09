@@ -27,8 +27,8 @@ int main(){
 		//mon.process("TestNils2.avi");
 
 		//## Kamera sollte am besten senkrecht zur Straﬂe ausgerichtet sein
-		//mon.process("Bochum1.avi"); //http://www.youtube.com/watch?v=Jc22qUyuN7k
-		mon.process("Bochum2.avi"); //http://www.youtube.com/watch?v=ZD1zeSSJZ7k
+		mon.process("Bochum1.avi"); //http://www.youtube.com/watch?v=Jc22qUyuN7k
+		//mon.process("Bochum2.avi"); //http://www.youtube.com/watch?v=ZD1zeSSJZ7k
 	}
 	return 0;
 }
