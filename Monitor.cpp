@@ -10,6 +10,7 @@ Monitor::~Monitor(){
 }
 
 //#####################################################################################
+//#####################################################################################
 //verarbeitet InputStream + Ausgabe
 void Monitor::process(const string& path){
 
@@ -19,10 +20,12 @@ void Monitor::process(const string& path){
 	globalCarCount = 0;
 	if(path == "0")		configFlip = 1;		//Webcam Stream wird "über Kopf" gedreht
 	else				configFlip = 0;
-	confCarWidth = 90;
+	confDetect = 1;
+	resetCount = 0;
+	confCarWidth = 120;
 	confCarHeight= 50;
-	confInputStream = 1;
-	confBackground = 1;
+	confInputStream = 0;
+	confBackground = 0;
 	
 	//*********************************************************************************
 	//Original Stream
@@ -47,13 +50,7 @@ void Monitor::process(const string& path){
 
 	//*********************************************************************************
 	//Config Menü erstellen
-	namedWindow("Konfigurator");
-	resizeWindow("Konfigurator",250,220);
-	createTrackbar("InputFlip","Konfigurator",&configFlip,1);		//flip InputStream
-	createTrackbar("Input","Konfigurator",&confInputStream,1);
-	createTrackbar("Background","Konfigurator",&confBackground,1);
-	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
-	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
+	createConfMenue();
 
 	//#################################################################################
 	//Streams und Berechnungen laufen lassen
@@ -61,12 +58,8 @@ void Monitor::process(const string& path){
 
 		//*****************************************************************************
 		//Trackbars aus Config Menü auslesen
-		configFlip = getTrackbarPos("InputFlip","Konfigurator");
-		confCarWidth = getTrackbarPos("CarWidth","Konfigurator");
-		confCarHeight = getTrackbarPos("CarHeight","Konfigurator");
-		confInputStream = getTrackbarPos("Input","Konfigurator");	if(confInputStream == 0) destroyWindow("Input Stream");
-		confBackground = getTrackbarPos("Background","Konfigurator");	if(confBackground == 0) destroyWindow("Background");
-
+		checkConfMenue();
+		
 		//*****************************************************************************
 		//Original Stream holen
 		if(stream.getInputStream().read(aktFrame) == false){
@@ -81,11 +74,17 @@ void Monitor::process(const string& path){
 
 		//*****************************************************************************
 		//Objekterkennung, Hervorbebung und Zählung
-		detectMotion();
-		cout << "Autos: " << objCount << " || Konturen: " << contCount << endl;
+		if(confDetect == 1){
+			detectMotion();
+			cout << "Autos: " << objCount << " || Konturen: " << contCount << endl;
+		} else {														//wenn Detection off, zeige direkt InputStream - Fenster für Detection werden nicht mehr angezeigt
+			confInputStream = 0; confBackground = 0;
+			destroyWindow("Input Stream"); destroyWindow("Background");
+			aktFrame.copyTo(outputFrame);
+		}
 		
 		//*****************************************************************************
-		//Anzeige der Frames
+		//Anzeige der Monitor Frames und Verarbeitungsfenster
 		if(confInputStream == 1) imshow("Input Stream", aktFrame);
 		if(confBackground == 1)	imshow("Background", bgFrame);
 		imshow("Street Monitor", outputFrame);
@@ -94,10 +93,9 @@ void Monitor::process(const string& path){
 }
 
 //#####################################################################################
+//#####################################################################################
 //Motion Detection + Zählung
 void Monitor::detectMotion(){
-	
-	//RNG rnd(12345);		//random Number für Farbe der Konturen
 
 	//*********************************************************************************
 	//Canny Edge Detection TEST MODE
@@ -134,11 +132,10 @@ void Monitor::detectMotion(){
 	//Objekte als Fahrzeuge erkennen, zeichnen und zählen
 	bool work = false;
 	for(int i=0; i < boundRect.size(); i++){
-		//verarbeitet nur Objekte die breiter 90px / höher 50px  sind (z.B. Autos + LKW) >> über Slider einstellbar!
+		//verarbeitet nur Objekte die breiter 120px / höher 50px  sind (z.B. Autos + LKW) >> über Slider einstellbar!
 		if(boundRect[i].size().width > confCarWidth && boundRect[i].size().height > confCarHeight){	
 			work = true;
 
-			//Scalar color = Scalar(rnd.uniform(0,255),rnd.uniform(0,255),rnd.uniform(0,255));			//random Farbe für Kontur
 			//drawContours(outputFrame,contoursPoly,i,color,1,8,vector<Vec4i>(),0,Point());				//zeichnet originale Kontur -- langsamer: //drawContours(outputFrame,contours,-1,Scalar(255,0,0),2);
 			rectangle(outputFrame,boundRect[i].tl(),boundRect[i].br(),color,2,8,0);						//zeichnet Rechteck um Kontur
 			objCount++;
@@ -151,37 +148,12 @@ void Monitor::detectMotion(){
 			Mat viewCar;
 			aktFrame(boundRect[i]).copyTo(viewCar);
 
+			//*********************************************************************************
 			//Car Objekt erzeugen für neu erkanntes Fahrzeug
 			Car newCar = Car(viewCar,center,globalCarCount+1);
 
-			//*********************************************************************************
-			//Car Objekte vergleichen und Neues erst in Liste anlegen, wenn es noch nicht vorhanden ist					>> eigene Funktion auslagern?!??!
-			if(frameCount < 2){								//ersten Frames müssen noch initialisieren, erst dann wird gezählt
-				globalCarCount = 0;							//da erstes Objekt meist das gesamte erste Frame! (Bug..haha)
-			}
-			else{
-				bool found = false;
-				for(int c=0; c < cars.size(); c++){
-					//cout << "aktuell erfasste Fahrzeuge:" << cars.size() << endl;
-					
-					//Wenn centroid des gefundenen Fahrzeugs nahe (range) eines vorhandenen Fahrzeugs aus der Liste liegt, ist es wohl dasselbe Fahrzeug ?!
-					//range = Centroid innerhalb halber Breite und Höhe der Erkennungsrange
-					if(newCar.getCenter().x > cars[c].getCenter().x-(confCarWidth/2) && newCar.getCenter().x < cars[c].getCenter().x+(confCarWidth/2)
-							&& newCar.getCenter().y > cars[c].getCenter().y-(confCarHeight/2) && newCar.getCenter().y < cars[c].getCenter().y+(confCarHeight/2)){
-						found = true;
-						cout << "sameCarNr: " << cars[c].getNumber() << endl;
-						cars[c].updateCenter(center);
-						cars[c].updateFace(viewCar);
-						imshow(intToString(objCount), cars[c].getFace());			//aktuelles Fahrzeug in eigenem Fenster anzeigen
-					}
-				}
-				//kein bekanntes Fahrzeug im aktuellen Frame gefunden, Fahrzeug muss also neu sein
-				if(found == false){
-					cars.push_back(newCar);
-					globalCarCount++;
-					cout << "newCarNr: " << newCar.getNumber() << endl;
-				}
-			}
+			//Car Objekte vergleichen und newCar nur in Liste anlegen, wenn es noch nicht vorhanden ist
+			checkCar(newCar);
 			newCar.~Car();
 		}
 	}
@@ -202,6 +174,69 @@ void Monitor::detectMotion(){
 }
 
 //#####################################################################################
+//#####################################################################################
+//erzeugt das Konfigurationsmenü
+void Monitor::createConfMenue(){
+	namedWindow("Konfigurator");
+	resizeWindow("Konfigurator",260,310);
+	createTrackbar("InputFlip","Konfigurator",&configFlip,1);		//flip InputStream
+	createTrackbar("Detection","Konfigurator",&confDetect,1);
+	createTrackbar("ResetCount","Konfigurator",&resetCount,1);
+	createTrackbar("Input","Konfigurator",&confInputStream,1);
+	createTrackbar("Background","Konfigurator",&confBackground,1);
+	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
+	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
+}
+
+//#####################################################################################
+//#####################################################################################
+//fragt Slider des Konfigurationsmenüs ab
+void Monitor::checkConfMenue(){
+	configFlip = getTrackbarPos("InputFlip","Konfigurator");
+	confDetect = getTrackbarPos("Detection","Konfigurator");
+	resetCount = getTrackbarPos("ResetCount","Konfigurator"); if(resetCount == 1) globalCarCount = 0;
+	confCarWidth = getTrackbarPos("CarWidth","Konfigurator");
+	confCarHeight = getTrackbarPos("CarHeight","Konfigurator");
+	confInputStream = getTrackbarPos("Input","Konfigurator");	if(confInputStream == 0) destroyWindow("Input Stream");
+	confBackground = getTrackbarPos("Background","Konfigurator");	if(confBackground == 0) destroyWindow("Background");
+}
+
+//#####################################################################################
+//#####################################################################################
+//vergleicht neues Car Objekt mit Liste vorhandener Car Objekte
+//wenn newCar bereits vorhanden, aktualisiere Centroid & Face
+//wenn newCar nicht vorhanden, füge es der Liste hinzu
+void Monitor::checkCar(Car newCar){
+	if(frameCount < 3){								//ersten Frames müssen noch initialisieren, erst dann wird gezählt
+		globalCarCount = 0;							//da erstes Objekt meist das gesamte erste Frame! (Bug..haha)
+	}
+	else{
+		bool found = false;
+		for(int c=0; c < cars.size(); c++){
+			//cout << "aktuell erfasste Fahrzeuge:" << cars.size() << endl;
+			
+			//Wenn centroid des gefundenen Fahrzeugs nahe (range) eines vorhandenen Fahrzeugs aus der Liste liegt, ist es wohl dasselbe Fahrzeug ?!
+			//range = Centroid innerhalb halber Breite und Höhe der Erkennungsrange
+			if(newCar.getCenter().x > cars[c].getCenter().x-(confCarWidth/2) && newCar.getCenter().x < cars[c].getCenter().x+(confCarWidth/2)
+					&& newCar.getCenter().y > cars[c].getCenter().y-(confCarHeight/2) && newCar.getCenter().y < cars[c].getCenter().y+(confCarHeight/2)){
+				found = true;
+				cout << "sameCarNr: " << cars[c].getNumber() << endl;
+				cars[c].updateCenter(newCar.getCenter());
+				cars[c].updateFace(newCar.getFace());
+				imshow(intToString(objCount), cars[c].getFace());			//aktuelles Fahrzeug in eigenem Fenster anzeigen
+			}
+		}
+		//kein bekanntes Fahrzeug im aktuellen Frame gefunden, Fahrzeug muss also neu sein
+		if(found == false){
+			cars.push_back(newCar);
+			globalCarCount++;
+			cout << "newCarNr: " << newCar.getNumber() << endl;
+		}
+	}
+}
+
+//#####################################################################################
+//#####################################################################################
 //Wandelt int in String um
 std::string Monitor::intToString(int x){
 	stringstream ss;
@@ -210,6 +245,7 @@ std::string Monitor::intToString(int x){
 	return str;
 }
 
+//#####################################################################################
 //#####################################################################################
 //Candy Edge Detector  TEST MODE - erkennt Umrisse
 //http://docs.opencv.org/doc/tutorials/imgproc/imgtrans/canny_detector/canny_detector.html

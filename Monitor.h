@@ -35,10 +35,15 @@ private:
 	std::vector<Car> cars;				//Array für gefundene Fahrzeuge
 
 	void detectMotion();				//Motion Detection
+	void checkCar(Car newCar);			//vergleicht newCar mit Car-Liste und aktualisiert Liste
+	void createConfMenue();				//erstellt Konfigurations-Menü
+	void checkConfMenue();				//fragt Werte des Konfigurations-Menü ab
 	std::string intToString(int x);		//int to String
 
 	//Config
 	int configFlip;						//für Bilddrehung (0 aus, 1 ein)
+	int confDetect;						//schaltet MotionDetection ein/aus
+	int resetCount;						//Kippschalter: 1 = reset globalCarCount;
 	int confCarWidth, confCarHeight;	//zu erkennende Fahrzeugbreite und -höhe
 	int confInputStream, confBackground;//MatObjekte de/aktivieren
 

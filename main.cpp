@@ -7,68 +7,64 @@
 using namespace cv;
 using namespace std;
 
-string getSource();
+Monitor mon;
+
+char getChoice();
 
 //#################################################################################
 int main(){
 	Monitor mon;
-	string source = "nothing";
+	char c = 0;
+	string s = "";
 
-	///// SWITCH CASE BAUM (if else wegen string) um unterschiedliche Videos zu wählen ...
-	//evtl noch video per pfad wählen lassen (fenster??)
-	//nach video ende oder abbruch des monitos hierhin zurückkehren!!!
-	//dabei alle alten fenster schließen!!
-	while(source != "ende"){    
+	while(c != 'e'){ 
 		cout << "######################## Street Stream ########################\n" << endl;
 
 		//Quelle wählen
-		cout << "=============== QUELLE WAEHLEN ================" << endl;
-		source = getSource();
+		cout << "        =============== Quelle aussuchen ================" << endl;
+		cout << "\nTaste + Enter: \n"
+				"\te - Monitor beenden\n"
+				"\t0 - Webcam starten\n"
+				"\t1 - Video 1 starten (Dateiname: Monitor1.avi)\n"
+				"\t2 - Video 2 starten (Dateiname: Monitor2.avi)\n"
+				"\t3 - Video 3 starten (Dateiname: Monitor3.avi)\n";
+		cout << "EINGABE: ";
 
-		//Quelle starten
-		if(source == "0"){
-			mon.process("0"); // 0=Kamera - Pfad für Videodatei
-		}
-		else if(source == "1"){
-			//mon.process("Micro-dance.avi");
-			//mon.process("TestNils2.avi");
+		c = getChoice();
 
-			//## Kamera sollte am besten senkrecht zur Straße ausgerichtet sein
-			mon.process("Bochum1.avi"); //http://www.youtube.com/watch?v=Jc22qUyuN7k
-			//mon.process("Bochum2.avi"); //http://www.youtube.com/watch?v=ZD1zeSSJZ7k
+		if(c == 'e'){
+			cout << "Street Monitor beendet" << endl;
+			return c;
 		}
-		else if(source == "ende"){
-			break;
+
+		switch(c){
+			case '0':
+				cout << "Webcam start...\nLeertaste in Monitor zum Beenden" << endl;
+				mon = Monitor();
+				mon.process("0"); // 0=Kamera - Pfad für Videodatei
+				cout << "***************************************************************\n" << endl;
+				break;
+			case '1':
+			case '2':
+			case '3':
+				cout << "Monitor" << c << ".avi start...\nLeertaste in Monitor zum Beenden" << endl;
+				mon = Monitor();
+				s = ""; s = s + c;
+				mon.process("Monitor" + s + ".avi");
+				cout << "***************************************************************\n" << endl;
+				break;
+			default:
+				;
 		}
 	}
 	return 0;
 }
 
 //#################################################################################
-//User Abfrage, beendet erst, wenn gültige eingabe erkannt
-//ob Videodatei oder Webcam gewählt werden soll (ende = exit)
-string getSource(){
-	string source = "nothing";
-
-	while(true){
-		cout << "Waehle 0 fuer Webcam oder 1 fuer Videodatei: ";
-		cin >> source;
-		if(source == "0"){
-			break;
-		}
-		else if(source == "1"){
-			break;
-		}
-		else if(source == "ende"){
-			break;
-		}
-	}
-	cout << "gewaehlt: " << source << endl;
-	destroyAllWindows();
-	return source;
+//Eingabe abfragen
+char getChoice(){
+	string st = "";
+	cin >> st;
+	char* cc = const_cast<char*>(st.c_str());
+	return cc[0];
 }
-
-
-
-
-

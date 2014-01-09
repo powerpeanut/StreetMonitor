@@ -14,6 +14,8 @@ void StreetStream::setInputPath(const string& path){
 	inputPath = path;
 }
 
+//#####################################################################################
+//lädt und startet einen Stream von einem Video oder einer Webcam
 void StreetStream::startStream(){
 	//Videodatei öffnen >> videoCapture.open(path);
 	//oder Kamera öffnen >> videoCapture.open(0);  ((keinen Pfad übergeben sondern nur das Device (0=Standarddevice)))
