@@ -46,8 +46,6 @@ private:
 	int resetCount;						//Kippschalter: 1 = reset globalCarCount;
 	int confCarWidth, confCarHeight;	//zu erkennende Fahrzeugbreite und -höhe
 	int confInputStream, confBackground;//MatObjekte de/aktivieren
-
-	void Monitor::CannyThreshold(int, void*);	//Canny Edge Detection TEST MODE
 };
 
 #endif

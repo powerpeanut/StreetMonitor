@@ -184,7 +184,7 @@ void Monitor::createConfMenue(){
 	createTrackbar("ResetCount","Konfigurator",&resetCount,1);
 	createTrackbar("Input","Konfigurator",&confInputStream,1);
 	createTrackbar("Background","Konfigurator",&confBackground,1);
-	createTrackbar("CarWidth","Konfigurator",&confCarWidth,200);
+	createTrackbar("CarWidth","Konfigurator",&confCarWidth,300);
 	createTrackbar("CarHeight","Konfigurator",&confCarHeight,200);
 }
 
@@ -244,30 +244,3 @@ std::string Monitor::intToString(int x){
 	string str = ss.str();	
 	return str;
 }
-
-//#####################################################################################
-//#####################################################################################
-//Candy Edge Detector  TEST MODE - erkennt Umrisse
-//http://docs.opencv.org/doc/tutorials/imgproc/imgtrans/canny_detector/canny_detector.html
-void Monitor::CannyThreshold(int, void*){
-	Mat src_gray, detected_edges, out;
-	int edgeThresh = 1;
-	int lowThreshold = 60;
-	int ratio = 3;
-	int kernel_size = 3;
-
-	/// akt. Frame in Graustufenbild umwandeln
-	cvtColor(aktFrame, src_gray, CV_BGR2GRAY);
-
-	/// Reduce noise with a kernel 3x3
-	blur(src_gray, detected_edges, Size(3,3));
-	
-	/// Canny detector
-	Canny(detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size);
-	
-	/// Using Canny's output as a mask, we display our result
-	out = Scalar::all(0);
-	
-	aktFrame.copyTo(out, detected_edges);
-	imshow("Canny", out);
- }
